@@ -12,6 +12,10 @@ namespace PlayableDracula
 {
     public static class PlayableDracula
     {
+        const int MinDamage = 11;
+        const int MaxDamage = 15;
+        const float AbilityCooldown = 3f;
+
         private static bool IsDracula<T>(T gear) where T : Gear
         {
             return gear.name == "Dracula" || gear.name == "Dracula(Clone)";
@@ -19,14 +23,6 @@ namespace PlayableDracula
 
         public static void PatchAll(Harmony harmony)
         {
-            // SpawnPlayerPatch
-            MethodInfo SpawnPlayerMethod = AccessTools.Method(typeof(LevelManager), nameof(LevelManager.SpawnPlayerIfNotExist));
-            MethodInfo SpawnPlayerPrefix = AccessTools.Method(typeof(PlayableDracula), nameof(PrefixSpawnPlayer));
-            MethodInfo SpawnPlayerPostfix = AccessTools.Method(typeof(PlayableDracula), nameof(PostfixSpawnPlayer));
-
-            harmony.Patch(SpawnPlayerMethod, prefix: new HarmonyMethod(SpawnPlayerPrefix), postfix: new HarmonyMethod(SpawnPlayerPostfix));
-
-
             // DropGearPatch
             MethodInfo DropGearMethod = AccessTools.Method(typeof(LevelManager), nameof(LevelManager.DropGear), new Type[] { typeof(Gear), typeof(Vector3) });
             MethodInfo DropGearPrefix = AccessTools.Method(typeof(PlayableDracula), nameof(PrefixDropGear));
@@ -37,8 +33,9 @@ namespace PlayableDracula
             // SetCurrentSkills
             MethodInfo SetSkillsMethod = AccessTools.Method(typeof(Weapon), "SetCurrentSkills");
             MethodInfo SetSkillsPrefix = AccessTools.Method(typeof(PlayableDracula), nameof(PrefixSetSkills));
+            MethodInfo SetSkillsPostfix = AccessTools.Method(typeof(PlayableDracula), nameof(PostfixSetSkills));
 
-            harmony.Patch(SetSkillsMethod, prefix: new HarmonyMethod(SetSkillsPrefix));
+            harmony.Patch(SetSkillsMethod, prefix: new HarmonyMethod(SetSkillsPrefix), postfix: new HarmonyMethod(SetSkillsPostfix));
 
         }
 
@@ -79,6 +76,7 @@ namespace PlayableDracula
             if (IsDracula(gear))
             {
                 SetSkillInfo((Weapon)gear);
+                SetDamage((Weapon)gear);
             }
         }
 
@@ -89,16 +87,38 @@ namespace PlayableDracula
             new Traverse(weapon).Field("_skillSlots").SetValue(1);  // There is only one valid skill, this fixes all errors
         }
 
+        private static void SetDamage(Weapon weapon)
+        {
+            AttackDamage damage = weapon.GetComponent<AttackDamage>();
+            damage.minAttackDamage = MinDamage;
+            damage.maxAttackDamage = MaxDamage;
+        }
+
         #endregion
 
         #region SetSkillsPatch
 
         private static void PrefixSetSkills(Weapon __instance)
         {
-            // Possibly set cooldown here :)
             if (IsDracula(__instance))
             {
                 new Traverse(__instance.skills[0]).Field("_key").SetValue("TriplePierce_4");  // Set icon
+            }
+        }
+
+        private static void PostfixSetSkills(Weapon __instance)
+        {
+            if (IsDracula(__instance))
+            {
+                CooldownSerializer cooldown = new();
+                Traverse traverse = new(cooldown);
+                traverse.Field("_maxStack").SetValue(1);
+                traverse.Field("_streakCount").SetValue(0);
+                traverse.Field("_streakTimeout").SetValue(0);
+                traverse.Field("_cooldownTime").SetValue(AbilityCooldown);
+                traverse.Field("_type").SetValue(CooldownSerializer.Type.Time);
+
+                new Traverse(__instance.currentSkills[0].action).Field("_cooldown").SetValue(cooldown);
             }
         }
 
