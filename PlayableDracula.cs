@@ -1,23 +1,23 @@
 ﻿using Characters;
+using Characters.Cooldowns;
 using Characters.Gear;
 using Characters.Gear.Weapons;
+using Characters.Gear.Weapons.Gauges;
 using HarmonyLib;
 using Level;
+using Services;
+using Singletons;
+using System;
 using System.Reflection;
 using UnityEngine;
-using System;
-using Characters.Cooldowns;
 using static Characters.CharacterStatus;
-using Singletons;
-using Services;
-using Characters.Gear.Weapons.Gauges;
 
 namespace PlayableDracula
 {
     public static class PlayableDracula
     {
         const string PlaceholderSkill = "TriplePierce_4";
-        
+
         private class Config
         {
             public const int MinDamage = 11;
@@ -30,7 +30,7 @@ namespace PlayableDracula
 
             public const int BleedChancePercent = 10;
         }
-        
+
         private static bool IsDracula<T>(T gear) where T : Gear
         {
             return gear.name == "Dracula" || gear.name == "Dracula(Clone)";
