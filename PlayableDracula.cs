@@ -7,15 +7,30 @@ using System.Reflection;
 using UnityEngine;
 using System;
 using Characters.Cooldowns;
+using static Characters.CharacterStatus;
+using Singletons;
+using Services;
+using Characters.Gear.Weapons.Gauges;
 
 namespace PlayableDracula
 {
     public static class PlayableDracula
     {
-        const int MinDamage = 11;
-        const int MaxDamage = 15;
-        const float AbilityCooldown = 3f;
+        const string PlaceholderSkill = "TriplePierce_4";
+        
+        private class Config
+        {
+            public const int MinDamage = 11;
+            public const int MaxDamage = 15;
 
+            public const float AbilityCooldown = 3f;
+
+            public const int OnBleedHealing = 1;
+            public const float FullGaugeHealingMultiply = 3f;
+
+            public const int BleedChancePercent = 10;
+        }
+        
         private static bool IsDracula<T>(T gear) where T : Gear
         {
             return gear.name == "Dracula" || gear.name == "Dracula(Clone)";
@@ -37,37 +52,10 @@ namespace PlayableDracula
 
             harmony.Patch(SetSkillsMethod, prefix: new HarmonyMethod(SetSkillsPrefix), postfix: new HarmonyMethod(SetSkillsPostfix));
 
+
+            // OnEquipped
+
         }
-
-        #region SpawnPlayerPatch
-
-        private static readonly GiveDamageDelegate giveDamageDelegate = new(DraculaSetBaseDamage);
-
-        private static bool DraculaSetBaseDamage(ITarget target, ref Damage damage)
-        {
-            if (IsDracula(damage.attacker.character.playerComponents.inventory.weapon.current))
-            {
-                damage.@base = 10;
-            }
-
-            return false;
-        }
-
-        private static void PrefixSpawnPlayer(LevelManager __instance, ref bool __state)
-        {
-            __state = __instance.player is not null;
-        }
-
-        private static void PostfixSpawnPlayer(LevelManager __instance, bool __state)
-        {
-            // If created new player
-            if (__state)
-            {
-                __instance.player.onGiveDamage.Add(0, giveDamageDelegate);
-            }
-        }
-
-        #endregion
 
         #region DropGearPatch
 
@@ -75,8 +63,12 @@ namespace PlayableDracula
         {
             if (IsDracula(gear))
             {
-                SetSkillInfo((Weapon)gear);
-                SetDamage((Weapon)gear);
+                Weapon weapon = (Weapon)gear;
+
+                SetSkillInfo(weapon);
+                SetDamage(weapon);
+                SetHealingFunc();
+                SetBleedChance();
             }
         }
 
@@ -90,8 +82,65 @@ namespace PlayableDracula
         private static void SetDamage(Weapon weapon)
         {
             AttackDamage damage = weapon.GetComponent<AttackDamage>();
-            damage.minAttackDamage = MinDamage;
-            damage.maxAttackDamage = MaxDamage;
+            damage.minAttackDamage = Config.MinDamage;
+            damage.maxAttackDamage = Config.MaxDamage;
+        }
+
+        private static void SetHealingFunc()
+        {
+            Singleton<Service>.Instance.levelManager.player.status.onApplyBleed += new OnTimeDelegate(HealOnBleed);
+        }
+
+        private static void HealOnBleed(Character attacker, Character target)
+        {
+            Weapon weapon = attacker.playerComponents.inventory.weapon.current;
+
+            if (IsDracula(weapon))
+            {
+                if (target.type == Character.Type.Dummy)
+                    return;
+
+                ValueGauge gauge = (ValueGauge)weapon.gauge;
+
+                bool multiplyHealing = false;
+                if (gauge.currentValue >= gauge.maxValue)
+                {
+                    multiplyHealing = true;
+                    gauge.Clear();
+                }
+
+                attacker.health.Heal(multiplyHealing ? Config.OnBleedHealing * Config.FullGaugeHealingMultiply : Config.OnBleedHealing);
+            }
+        }
+
+        private static void SetBleedChance()
+        {
+            Debug.Log("Delegate");
+            Singleton<Service>.Instance.levelManager.player.onGaveDamage += new GaveDamageDelegate(ApplyBleedWithChance);
+        }
+
+
+        private static readonly ApplyInfo applyInfo = new(Kind.Wound);
+        private static void ApplyBleedWithChance(ITarget target,
+                                                 in Damage originalDamage,
+                                                 in Damage gaveDamage,
+                                                 double damageDealt)
+        {
+            Character player = Singleton<Service>.Instance.levelManager.player;
+
+            if (!IsDracula(player.playerComponents.inventory.weapon.current))
+                return;
+
+            if (target.character == null || target.character.health.dead)
+                return;
+
+            if (originalDamage.attackType != Damage.AttackType.Melee)
+                return;
+
+            if (!MMMaths.PercentChance(Config.BleedChancePercent))
+                return;
+
+            player.GiveStatus(target.character, applyInfo);
         }
 
         #endregion
@@ -102,7 +151,7 @@ namespace PlayableDracula
         {
             if (IsDracula(__instance))
             {
-                new Traverse(__instance.skills[0]).Field("_key").SetValue("TriplePierce_4");  // Set icon
+                new Traverse(__instance.skills[0]).Field("_key").SetValue(PlaceholderSkill);  // Set icon
             }
         }
 
@@ -115,7 +164,7 @@ namespace PlayableDracula
                 traverse.Field("_maxStack").SetValue(1);
                 traverse.Field("_streakCount").SetValue(0);
                 traverse.Field("_streakTimeout").SetValue(0);
-                traverse.Field("_cooldownTime").SetValue(AbilityCooldown);
+                traverse.Field("_cooldownTime").SetValue(Config.AbilityCooldown);
                 traverse.Field("_type").SetValue(CooldownSerializer.Type.Time);
 
                 new Traverse(__instance.currentSkills[0].action).Field("_cooldown").SetValue(cooldown);
