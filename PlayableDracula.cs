@@ -40,10 +40,10 @@ namespace PlayableDracula
         public static void PatchAll(Harmony harmony)
         {
             // DropGearPatch
-            MethodInfo DropGearMethod = AccessTools.Method(typeof(Weapon), "InitializeSkills");
-            MethodInfo DropGearPrefix = AccessTools.Method(typeof(PlayableDracula), nameof(PrefixDropGear));
+            MethodInfo InitSkillsMethod = AccessTools.Method(typeof(Weapon), "InitializeSkills");
+            MethodInfo InitSkillsPrefix = AccessTools.Method(typeof(PlayableDracula), nameof(PrefixInitSkills));
 
-            harmony.Patch(DropGearMethod, prefix: new HarmonyMethod(DropGearPrefix));
+            harmony.Patch(InitSkillsMethod, prefix: new HarmonyMethod(InitSkillsPrefix));
 
 
             // SetCurrentSkills
@@ -69,7 +69,7 @@ namespace PlayableDracula
 
         #region DropGearPatch
 
-        private static void PrefixDropGear(Weapon __instance)
+        private static void PrefixInitSkills(Weapon __instance)
         {
             if (IsDracula(__instance))
             {
