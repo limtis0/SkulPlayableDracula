@@ -19,19 +19,6 @@ namespace PlayableDracula
     {
         const string PlaceholderSkill = "TriplePierce_4";
 
-        private class Config
-        {
-            public const int MinDamage = 11;
-            public const int MaxDamage = 15;
-
-            public const float AbilityCooldown = 3f;
-
-            public const int OnBleedHealing = 1;
-            public const float FullGaugeHealingMultiply = 3f;
-
-            public const int BleedChancePercent = 10;
-        }
-
         private static bool IsDracula<T>(T gear) where T : Gear
         {
             return gear.name == "Dracula" || gear.name == "Dracula(Clone)";
@@ -61,8 +48,8 @@ namespace PlayableDracula
         private static void SetDamage(Weapon weapon)
         {
             AttackDamage damage = weapon.GetComponent<AttackDamage>();
-            damage.minAttackDamage = Config.MinDamage;
-            damage.maxAttackDamage = Config.MaxDamage;
+            damage.minAttackDamage = Plugin.BaseMinDamage.Value;
+            damage.maxAttackDamage = Plugin.BaseMaxDamage.Value;
         }
 
         private static void SetHealingFunc()
@@ -88,7 +75,7 @@ namespace PlayableDracula
                     gauge.Clear();
                 }
 
-                attacker.health.Heal(multiplyHealing ? Config.OnBleedHealing * Config.FullGaugeHealingMultiply : Config.OnBleedHealing);
+                attacker.health.Heal(multiplyHealing ? Plugin.OnBleedHealing.Value * Plugin.FullGaugeHealingMultiplyBy.Value : Plugin.OnBleedHealing.Value);
             }
         }
 
@@ -115,7 +102,7 @@ namespace PlayableDracula
             if (originalDamage.attackType != Damage.AttackType.Melee)
                 return;
 
-            if (!MMMaths.PercentChance(Config.BleedChancePercent))
+            if (!MMMaths.PercentChance(Plugin.BleedChancePercent.Value))
                 return;
 
             player.GiveStatus(target.character, applyInfo);
@@ -145,7 +132,7 @@ namespace PlayableDracula
                 cooldown._maxStack = 1;
                 cooldown._streakCount = 0;
                 cooldown._streakTimeout = 0;
-                cooldown._cooldownTime = Config.AbilityCooldown;
+                cooldown._cooldownTime = Plugin.AbilityCooldown.Value;
                 cooldown._type = CooldownSerializer.Type.Time;
 
                 __instance.currentSkills[0].action._cooldown = cooldown;
