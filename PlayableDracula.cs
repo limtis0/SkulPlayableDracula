@@ -5,7 +5,6 @@ using Characters.Gear.Weapons;
 using Characters.Gear.Weapons.Gauges;
 using GameResources;
 using HarmonyLib;
-using Level;
 using Services;
 using Singletons;
 using System;
@@ -193,7 +192,7 @@ namespace PlayableDracula
 
             SetDraculaObtainability(__instance, true);
         }
-        
+
         private static void OnQuitPrefix()
         {
             SetDraculaObtainability(Singleton<Service>.Instance.gearManager, false);
