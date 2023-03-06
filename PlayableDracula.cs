@@ -3,11 +3,13 @@ using Characters.Cooldowns;
 using Characters.Gear;
 using Characters.Gear.Weapons;
 using Characters.Gear.Weapons.Gauges;
+using GameResources;
 using HarmonyLib;
 using Level;
 using Services;
 using Singletons;
 using System;
+using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using static Characters.CharacterStatus;
@@ -39,7 +41,7 @@ namespace PlayableDracula
         public static void PatchAll(Harmony harmony)
         {
             // DropGearPatch
-            MethodInfo DropGearMethod = AccessTools.Method(typeof(LevelManager), nameof(LevelManager.DropGear), new Type[] { typeof(Gear), typeof(Vector3) });
+            MethodInfo DropGearMethod = AccessTools.Method(typeof(Weapon), "InitializeSkills");
             MethodInfo DropGearPrefix = AccessTools.Method(typeof(PlayableDracula), nameof(PrefixDropGear));
 
             harmony.Patch(DropGearMethod, prefix: new HarmonyMethod(DropGearPrefix));
@@ -53,20 +55,27 @@ namespace PlayableDracula
             harmony.Patch(SetSkillsMethod, prefix: new HarmonyMethod(SetSkillsPrefix), postfix: new HarmonyMethod(SetSkillsPostfix));
 
 
-            // OnEquipped
+            // SetObtainability
+            MethodInfo GetWeaponMethod = AccessTools.Method(typeof(GearManager), nameof(GearManager.GetWeaponToTake), new Type[] { typeof(System.Random), typeof(Rarity) });
+            MethodInfo GetWeaponPrefix = AccessTools.Method(typeof(PlayableDracula), nameof(PrefixGetWeapon));
 
+            harmony.Patch(GetWeaponMethod, prefix: new HarmonyMethod(GetWeaponPrefix));
+
+
+            MethodInfo QuitMethod = AccessTools.Method(typeof(Application), nameof(Application.Quit), new Type[] { typeof(int) });
+            MethodInfo QuitPrefix = AccessTools.Method(typeof(PlayableDracula), nameof(OnQuitPrefix));
+
+            harmony.Patch(QuitMethod, prefix: new HarmonyMethod(QuitPrefix));
         }
 
         #region DropGearPatch
 
-        private static void PrefixDropGear(Gear gear)
+        private static void PrefixDropGear(Weapon __instance)
         {
-            if (IsDracula(gear))
+            if (IsDracula(__instance))
             {
-                Weapon weapon = (Weapon)gear;
-
-                SetSkillInfo(weapon);
-                SetDamage(weapon);
+                SetSkillInfo(__instance);
+                SetDamage(__instance);
                 SetHealingFunc();
                 SetBleedChance();
             }
@@ -115,7 +124,6 @@ namespace PlayableDracula
 
         private static void SetBleedChance()
         {
-            Debug.Log("Delegate");
             Singleton<Service>.Instance.levelManager.player.onGaveDamage += new GaveDamageDelegate(ApplyBleedWithChance);
         }
 
@@ -169,6 +177,35 @@ namespace PlayableDracula
 
                 new Traverse(__instance.currentSkills[0].action).Field("_cooldown").SetValue(cooldown);
             }
+        }
+
+        #endregion
+
+        #region SetObtainability
+
+        private static bool setObtainable = false;
+        private static void PrefixGetWeapon(GearManager __instance)
+        {
+            if (setObtainable)
+                return;
+
+            setObtainable = true;
+
+            SetDraculaObtainability(__instance, true);
+        }
+        
+        private static void OnQuitPrefix()
+        {
+            SetDraculaObtainability(Singleton<Service>.Instance.gearManager, false);
+        }
+
+        private static void SetDraculaObtainability(GearManager gearManager, bool obtainability)
+        {
+            EnumArray<Rarity, WeaponReference[]> gearByRarity = new Traverse(gearManager).Field("_weapons").GetValue() as EnumArray<Rarity, WeaponReference[]>;
+
+            WeaponReference reference = gearByRarity[Rarity.Legendary].First(gearRef => gearRef.name == "Dracula");
+
+            reference.obtainable = obtainability;
         }
 
         #endregion
