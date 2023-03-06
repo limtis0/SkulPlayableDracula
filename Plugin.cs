@@ -1,5 +1,6 @@
 ﻿using BepInEx;
 using HarmonyLib;
+using System.Reflection;
 
 namespace PlayableDracula
 {
@@ -8,8 +9,7 @@ namespace PlayableDracula
     {
         public void Awake()
         {
-            Harmony harmony = new(PluginInfo.PLUGIN_GUID);
-            PlayableDracula.PatchAll(harmony);
+            Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly());
         }
     }
 }

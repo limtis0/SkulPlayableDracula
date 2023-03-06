@@ -9,12 +9,12 @@ using Services;
 using Singletons;
 using System;
 using System.Linq;
-using System.Reflection;
 using UnityEngine;
 using static Characters.CharacterStatus;
 
 namespace PlayableDracula
 {
+    [HarmonyPatch]
     public static class PlayableDracula
     {
         const string PlaceholderSkill = "TriplePierce_4";
@@ -37,38 +37,10 @@ namespace PlayableDracula
             return gear.name == "Dracula" || gear.name == "Dracula(Clone)";
         }
 
-        public static void PatchAll(Harmony harmony)
-        {
-            // DropGearPatch
-            MethodInfo InitSkillsMethod = AccessTools.Method(typeof(Weapon), "InitializeSkills");
-            MethodInfo InitSkillsPrefix = AccessTools.Method(typeof(PlayableDracula), nameof(PrefixInitSkills));
-
-            harmony.Patch(InitSkillsMethod, prefix: new HarmonyMethod(InitSkillsPrefix));
-
-
-            // SetCurrentSkills
-            MethodInfo SetSkillsMethod = AccessTools.Method(typeof(Weapon), "SetCurrentSkills");
-            MethodInfo SetSkillsPrefix = AccessTools.Method(typeof(PlayableDracula), nameof(PrefixSetSkills));
-            MethodInfo SetSkillsPostfix = AccessTools.Method(typeof(PlayableDracula), nameof(PostfixSetSkills));
-
-            harmony.Patch(SetSkillsMethod, prefix: new HarmonyMethod(SetSkillsPrefix), postfix: new HarmonyMethod(SetSkillsPostfix));
-
-
-            // SetObtainability
-            MethodInfo GetWeaponMethod = AccessTools.Method(typeof(GearManager), nameof(GearManager.GetWeaponToTake), new Type[] { typeof(System.Random), typeof(Rarity) });
-            MethodInfo GetWeaponPrefix = AccessTools.Method(typeof(PlayableDracula), nameof(PrefixGetWeapon));
-
-            harmony.Patch(GetWeaponMethod, prefix: new HarmonyMethod(GetWeaponPrefix));
-
-
-            MethodInfo QuitMethod = AccessTools.Method(typeof(Application), nameof(Application.Quit), new Type[] { typeof(int) });
-            MethodInfo QuitPrefix = AccessTools.Method(typeof(PlayableDracula), nameof(OnQuitPrefix));
-
-            harmony.Patch(QuitMethod, prefix: new HarmonyMethod(QuitPrefix));
-        }
-
         #region DropGearPatch
 
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Weapon), "InitializeSkills")]
         private static void PrefixInitSkills(Weapon __instance)
         {
             if (IsDracula(__instance))
@@ -154,6 +126,8 @@ namespace PlayableDracula
 
         #region SetSkillsPatch
 
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Weapon), "SetCurrentSkills")]
         private static void PrefixSetSkills(Weapon __instance)
         {
             if (IsDracula(__instance))
@@ -162,6 +136,8 @@ namespace PlayableDracula
             }
         }
 
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(Weapon), "SetCurrentSkills")]
         private static void PostfixSetSkills(Weapon __instance)
         {
             if (IsDracula(__instance))
@@ -183,6 +159,9 @@ namespace PlayableDracula
         #region SetObtainability
 
         private static bool setObtainable = false;
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(GearManager), nameof(GearManager.GetWeaponToTake), new Type[] { typeof(System.Random), typeof(Rarity) })]
         private static void PrefixGetWeapon(GearManager __instance)
         {
             if (setObtainable)
@@ -193,6 +172,8 @@ namespace PlayableDracula
             SetDraculaObtainability(__instance, true);
         }
 
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Application), nameof(Application.Quit), new Type[] { typeof(int) })]
         private static void OnQuitPrefix()
         {
             SetDraculaObtainability(Singleton<Service>.Instance.gearManager, false);
