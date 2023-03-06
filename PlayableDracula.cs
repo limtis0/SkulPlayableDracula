@@ -55,8 +55,7 @@ namespace PlayableDracula
         private static void SetSkillInfo(Weapon weapon)
         {
             weapon.transform.Find("Equipped/Skill").gameObject.AddComponent<SkillInfo>();  // Magic by MrBacanudo
-
-            new Traverse(weapon).Field("_skillSlots").SetValue(1);  // There is only one valid skill, this fixes all errors
+            weapon._skillSlots = 1;
         }
 
         private static void SetDamage(Weapon weapon)
@@ -132,7 +131,7 @@ namespace PlayableDracula
         {
             if (IsDracula(__instance))
             {
-                new Traverse(__instance.skills[0]).Field("_key").SetValue(PlaceholderSkill);  // Set icon
+                __instance.skills[0]._key = PlaceholderSkill;
             }
         }
 
@@ -143,14 +142,13 @@ namespace PlayableDracula
             if (IsDracula(__instance))
             {
                 CooldownSerializer cooldown = new();
-                Traverse traverse = new(cooldown);
-                traverse.Field("_maxStack").SetValue(1);
-                traverse.Field("_streakCount").SetValue(0);
-                traverse.Field("_streakTimeout").SetValue(0);
-                traverse.Field("_cooldownTime").SetValue(Config.AbilityCooldown);
-                traverse.Field("_type").SetValue(CooldownSerializer.Type.Time);
+                cooldown._maxStack = 1;
+                cooldown._streakCount = 0;
+                cooldown._streakTimeout = 0;
+                cooldown._cooldownTime = Config.AbilityCooldown;
+                cooldown._type = CooldownSerializer.Type.Time;
 
-                new Traverse(__instance.currentSkills[0].action).Field("_cooldown").SetValue(cooldown);
+                __instance.currentSkills[0].action._cooldown = cooldown;
             }
         }
 
@@ -181,7 +179,8 @@ namespace PlayableDracula
 
         private static void SetDraculaObtainability(GearManager gearManager, bool obtainability)
         {
-            EnumArray<Rarity, WeaponReference[]> gearByRarity = new Traverse(gearManager).Field("_weapons").GetValue() as EnumArray<Rarity, WeaponReference[]>;
+
+            EnumArray<Rarity, WeaponReference[]> gearByRarity = gearManager._weapons;
 
             WeaponReference reference = gearByRarity[Rarity.Legendary].First(gearRef => gearRef.name == "Dracula");
 
