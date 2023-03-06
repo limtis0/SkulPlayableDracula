@@ -6,6 +6,7 @@ using Level;
 using System.Reflection;
 using UnityEngine;
 using System;
+using Characters.Cooldowns;
 
 namespace PlayableDracula
 {
@@ -13,7 +14,7 @@ namespace PlayableDracula
     {
         private static bool IsDracula<T>(T gear) where T : Gear
         {
-            return gear.name == "Dracula";
+            return gear.name == "Dracula" || gear.name == "Dracula(Clone)";
         }
 
         public static void PatchAll(Harmony harmony)
@@ -31,6 +32,13 @@ namespace PlayableDracula
             MethodInfo DropGearPrefix = AccessTools.Method(typeof(PlayableDracula), nameof(PrefixDropGear));
 
             harmony.Patch(DropGearMethod, prefix: new HarmonyMethod(DropGearPrefix));
+
+
+            // SetCurrentSkills
+            MethodInfo SetSkillsMethod = AccessTools.Method(typeof(Weapon), "SetCurrentSkills");
+            MethodInfo SetSkillsPrefix = AccessTools.Method(typeof(PlayableDracula), nameof(PrefixSetSkills));
+
+            harmony.Patch(SetSkillsMethod, prefix: new HarmonyMethod(SetSkillsPrefix));
 
         }
 
@@ -79,6 +87,19 @@ namespace PlayableDracula
             weapon.transform.Find("Equipped/Skill").gameObject.AddComponent<SkillInfo>();  // Magic by MrBacanudo
 
             new Traverse(weapon).Field("_skillSlots").SetValue(1);  // There is only one valid skill, this fixes all errors
+        }
+
+        #endregion
+
+        #region SetSkillsPatch
+
+        private static void PrefixSetSkills(Weapon __instance)
+        {
+            // Possibly set cooldown here :)
+            if (IsDracula(__instance))
+            {
+                new Traverse(__instance.skills[0]).Field("_key").SetValue("TriplePierce_4");  // Set icon
+            }
         }
 
         #endregion
