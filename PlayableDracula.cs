@@ -50,6 +50,7 @@ namespace PlayableDracula
             hudIcon = Sprite.Create(hudIconT, new Rect(0.0f, 0.0f, hudIconT.width, hudIconT.height), new Vector2(0.5f, 0.3f), 20.0f);
         }
         
+        // Thanks to MrBacanudo for this method of loading Sprites!
         private static Texture2D LoadTextureB64(string b64String)
         {
             byte[] skullIconBytes = Convert.FromBase64String(b64String);
