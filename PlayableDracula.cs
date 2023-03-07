@@ -20,7 +20,8 @@ namespace PlayableDracula
         private static readonly Sprite droppedSkull;
         private static readonly Sprite hudIcon;
 
-        const string PlaceholderSkill = "TriplePierce_4";
+        const string DraculaSkillKey = "DraculaSkill";
+        const string PlaceholderSkillKey = "TriplePierce_4";
 
         static PlayableDracula()
         {
@@ -162,7 +163,7 @@ namespace PlayableDracula
         {
             if (IsDracula(__instance))
             {
-                __instance.skills[0]._key = PlaceholderSkill;
+                __instance.skills[0]._key = DraculaSkillKey;
             }
         }
 
@@ -227,7 +228,7 @@ namespace PlayableDracula
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Weapon), nameof(Weapon.mainIcon), MethodType.Getter)]
         [HarmonyPatch(typeof(Weapon), nameof(Weapon.subIcon), MethodType.Getter)]
-        private static bool PrefixMainIcon(Weapon __instance, ref Sprite __result)
+        private static bool PrefixHudIcon(Weapon __instance, ref Sprite __result)
         {
             if (IsDracula(__instance))
             {
@@ -236,6 +237,84 @@ namespace PlayableDracula
             }
 
             return true;
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Gear), nameof(Gear.displayName), MethodType.Getter)]
+        [HarmonyPatch(typeof(Weapon), nameof(Weapon.activeName), MethodType.Getter)]
+        private static bool PrefixSkullName(Gear __instance, ref string __result)
+        {
+            if (IsDracula(__instance))
+            {
+                __result = "Dracula";
+                return false;
+            }
+
+            return true;
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Gear), nameof(Gear.description), MethodType.Getter)]
+        private static bool PrefixSkullDescription(Gear __instance, ref string __result)
+        {
+            if (IsDracula(__instance))
+            {
+                __result =
+                    $"Normal attacks have a {Plugin.BleedChancePercent.Value}% chance to inflict <color=#C30012>Wound</color>.\n" +
+                    $"Restore {Plugin.OnBleedHealing.Value} HP when inflicting an enemy with <color=#C30012>Bleed</color>.\n" +
+                    $"This skull's gauge fills up on dealing damage to enemies.\n" +
+                    $"When gauge is full, next inflicted <color=#C30012>Bleed</color> will restore {Plugin.FullGaugeHealingMultiplyBy.Value} times more HP.";
+                return false;
+            }
+
+            return true;
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Weapon), nameof(Weapon.activeDescription), MethodType.Getter)]
+        private static bool PrefixActiveDescription(Weapon __instance, ref string __result)
+        {
+            if (IsDracula(__instance))
+            {
+                __result = "Does nothing on swap :)";
+                return false;
+            }
+
+            return true;
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(SkillInfo), nameof(SkillInfo.displayName), MethodType.Getter)]
+        private static bool PrefixSkillName(SkillInfo __instance, ref string __result)
+        {
+            if (__instance.key == DraculaSkillKey)
+            {
+                __result = "Swift Strike";
+                return false;
+            }
+
+            return true;
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(SkillInfo), nameof(SkillInfo.description), MethodType.Getter)]
+        private static bool PrefixSkillDescription(SkillInfo __instance, ref string __result)
+        {
+            if (__instance.key == DraculaSkillKey)
+            {
+                __result = "Dash forward and barrage enemies with piercing strikes, dealing <color=#F25D1C>Physical damage</color>.";
+                return false;
+            }
+
+            return true;
+        }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(GearResource), nameof(GearResource.GetSkillIcon))]
+        private static void PrefixGetSkillIcon(ref string name)
+        {
+            if (name == DraculaSkillKey)
+                name = PlaceholderSkillKey;
         }
 
         #endregion
