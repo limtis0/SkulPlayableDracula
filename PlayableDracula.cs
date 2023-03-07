@@ -17,14 +17,55 @@ namespace PlayableDracula
     [HarmonyPatch]
     public static class PlayableDracula
     {
+        private static readonly Sprite droppedSkull;
+        private static readonly Sprite hudIcon;
+
         const string PlaceholderSkill = "TriplePierce_4";
+
+        static PlayableDracula()
+        {
+            // Load droppedSkull sprite
+            string skullB64 =
+                "iVBORw0KGgoAAAANSUhEUgAAABsAAAAWCAMAAAAGlBe5AAAAAXNSR0IArs4c6QAAAH5QTFRFAAAAprHSxc/o6/T3ipOvuAAg2OLvyNLkbnaNOQAhnnx/gGJ" +
+                "kpgAafQQR9PDxaQA8oH+CvZeawwASXgANsQYXBAQEfQQSzC09S1Jl/wk0OgAPBgcI/9po13kNLxkx5+3wHgwG//jhNhIE2MPF////0NviNAYSEwsUPEVKoL" +
+                "bFgkZQuwAAACp0Uk5TAP//////////////////////////////////////////////////////J0/sFAAAALZJREFUKJGN0O0OgyAMQFE+ZymK6xIS9/4vu" +
+                "lJwiM5k94dRTiBUpf5Mty7LpsYvJyxkJaPNiJ0ausGs7Wi1c52OxugG02XRPybOGgfgG4UQoNhDe0ScJohxhkrLUpAPhdljSggRcQ5CiWNkC+uK5Ss9cQ1E" +
+                "okQpUbEg9Cp7A+2XYeUBMXNiGeJ3vo2o2Zsx5Qx99m0To7pxNEb+zfUi0tEE70yxRboxZQw/YpKR4ZftneyIZ7r2ARadCpbgjX+gAAAAAElFTkSuQmCC";
+
+            Texture2D skullT = LoadTextureB64(skullB64);
+            droppedSkull = Sprite.Create(skullT, new Rect(0.0f, 0.0f, skullT.width, skullT.height), new Vector2(0.5f, 0.5f), 35.0f);
+
+
+            // Load mainIcon sprite
+            string hudIconB64 =
+                "iVBORw0KGgoAAAANSUhEUgAAACMAAAAXCAMAAAC27AbQAAAAAXNSR0IArs4c6QAAAH5QTFRFAAAAprHSxc/o6/T3ipOvuAAg2OLvyNLkbnaNOQAhnnx/gGJkpg" +
+                "AafQQR9PDxaQA8oH+CvZeawwASXgANsQYXBAQEfQQSzC09S1Jl/wk0OgAPBgcI/9po13kNLxkx5+3wHgwG//jhNhIE2MPF////0NviNAYSEwsUPEVKoLbFgkZQ" +
+                "uwAAACp0Uk5TAP//////////////////////////////////////////////////////J0/sFAAAARxJREFUKJGd0dlugzAQBVAwELzEpu6YpQUUVWpR+v8/2D" +
+                "uGhEDIS6+EWeZoGNlJ8q+kS16WxRw8vEBMshiRimO0kgXlhybLVpSl+RNKNwYoPzQpF4tTiWQil7LYEaWUZHNKC611WUpjznJLrGWEn8lzoZ3T0mh9VhviECAY" +
+                "VVWa39ybrpT3j12s9855NiqSd+6lPK0ihBAVNkjXSDS1NNTcWoTQtkCd94v5AHJ1LRcSVcuxXReNnxuxadom2Sg06nCc88AxEl9viJA7OjZEfM1ICOMfDCadEd" +
+                "17BStE3/fGYemdlCEJYZ2I1TAM4yhoQv1ywUK7o0iSEeRrGIUF+kZ6svRkGA3jhNL1B8H9c0ewkSMTpYiuvwiRmubSHw3gGedUu+/ZAAAAAElFTkSuQmCC";
+
+            Texture2D hudIconT = LoadTextureB64(hudIconB64);
+            hudIcon = Sprite.Create(hudIconT, new Rect(0.0f, 0.0f, hudIconT.width, hudIconT.height), new Vector2(0.5f, 0.3f), 20.0f);
+        }
+        
+        private static Texture2D LoadTextureB64(string b64String)
+        {
+            byte[] skullIconBytes = Convert.FromBase64String(b64String);
+
+            Texture2D texture = new(2, 2);
+            texture.LoadImage(skullIconBytes);
+            texture.filterMode = FilterMode.Point;
+
+            return texture;
+        }
 
         private static bool IsDracula<T>(T gear) where T : Gear
         {
             return gear.name == "Dracula" || gear.name == "Dracula(Clone)";
         }
 
-        #region DropGearPatch
+        #region OnInit
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Weapon), "InitializeSkills")]
@@ -32,12 +73,15 @@ namespace PlayableDracula
         {
             if (IsDracula(__instance))
             {
+                SetDroppedSprite(__instance);
                 SetSkillInfo(__instance);
                 SetDamage(__instance);
                 SetHealingFunc();
                 SetBleedChance();
             }
         }
+
+        private static void SetDroppedSprite(Weapon weapon) => weapon._dropped.spriteRenderer.sprite = droppedSkull;
 
         private static void SetSkillInfo(Weapon weapon)
         {
@@ -110,7 +154,7 @@ namespace PlayableDracula
 
         #endregion
 
-        #region SetSkillsPatch
+        #region SetSkills
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Weapon), "SetCurrentSkills")]
@@ -128,12 +172,14 @@ namespace PlayableDracula
         {
             if (IsDracula(__instance))
             {
-                CooldownSerializer cooldown = new();
-                cooldown._maxStack = 1;
-                cooldown._streakCount = 0;
-                cooldown._streakTimeout = 0;
-                cooldown._cooldownTime = Plugin.AbilityCooldown.Value;
-                cooldown._type = CooldownSerializer.Type.Time;
+                CooldownSerializer cooldown = new()
+                {
+                    _maxStack = 1,
+                    _streakCount = 0,
+                    _streakTimeout = 0,
+                    _cooldownTime = Plugin.AbilityCooldown.Value,
+                    _type = CooldownSerializer.Type.Time
+                };
 
                 __instance.currentSkills[0].action._cooldown = cooldown;
             }
@@ -172,6 +218,24 @@ namespace PlayableDracula
             WeaponReference reference = gearByRarity[Rarity.Legendary].First(gearRef => gearRef.name == "Dracula");
 
             reference.obtainable = obtainability;
+        }
+
+        #endregion
+
+        #region SetIconsAndDescriptions
+
+        [HarmonyPrefix]
+        [HarmonyPatch(typeof(Weapon), nameof(Weapon.mainIcon), MethodType.Getter)]
+        [HarmonyPatch(typeof(Weapon), nameof(Weapon.subIcon), MethodType.Getter)]
+        private static bool PrefixMainIcon(Weapon __instance, ref Sprite __result)
+        {
+            if (IsDracula(__instance))
+            {
+                __result = hudIcon;
+                return false;
+            }
+
+            return true;
         }
 
         #endregion
