@@ -17,6 +17,11 @@ namespace PlayableDracula
         public static ConfigEntry<int> OnBleedHealing;
         public static ConfigEntry<float> FullGaugeHealingMultiplyBy;
 
+        public static ConfigEntry<string> DummySwapSkullName;
+        public static ConfigEntry<string> DummySwapName;
+        public static ConfigEntry<string> DummySwapDescription;
+        public static ConfigEntry<float> DummySwapVFXDuration;
+
 
         public void Awake()
         {
@@ -28,6 +33,11 @@ namespace PlayableDracula
 
             OnBleedHealing = Config.Bind("Abilities", "OnBleedHealing", 1, "Amount of HP to heal on bleeding applied");
             FullGaugeHealingMultiplyBy = Config.Bind("Abilities", "FullGaugeHealingMultiplyBy", 3f, "Healing multiplier on full gauge");
+
+            DummySwapSkullName = Config.Bind("Abilities", "DummySwapSkullName", "Skeleton_Sword_2", "WeaponReference.name of a skull to get the swap from (Swap must be a SimpleAction)");
+            DummySwapName = Config.Bind("Abilities", "DummySwapName", "Bloodlust", "Name of a swap ability");
+            DummySwapDescription = Config.Bind("Abilities", "DummySwapDescription", "", "Description of a swap ability (Will auto-load if empty)");
+            DummySwapVFXDuration = Config.Bind("Abilities", "DummySwapVFXDuration", 8f, "Duration of visual effects on swap");
 
             Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly());
         }
