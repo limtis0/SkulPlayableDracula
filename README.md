@@ -1,5 +1,6 @@
 # SkulPlayableDracula
 Special thanks to [MrBacanudo](https://github.com/MrBacanudo)
+<img width="960" alt="Untitled" src="https://user-images.githubusercontent.com/45824078/223484260-48b8aeb3-ab25-465d-972c-b1e6d93ad875.png">
 
 ### Setup premise
 `$(SkulFolder)` is a directory where the game is located on your PC
