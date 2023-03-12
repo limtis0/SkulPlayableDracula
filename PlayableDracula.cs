@@ -3,6 +3,8 @@ using Characters.Cooldowns;
 using Characters.Gear;
 using Characters.Gear.Weapons;
 using Characters.Gear.Weapons.Gauges;
+using Characters.Player;
+using FX.SpriteEffects;
 using GameResources;
 using HarmonyLib;
 using Services;
@@ -22,6 +24,8 @@ namespace PlayableDracula
 
         const string DraculaSkillKey = "DraculaSkill";
         const string PlaceholderSkillKey = "TriplePierce_4";
+
+        private static GenericSpriteEffect swapSpriteEffect;
 
         static PlayableDracula()
         {
@@ -48,6 +52,29 @@ namespace PlayableDracula
 
             Texture2D hudIconT = LoadTextureB64(hudIconB64);
             hudIcon = Sprite.Create(hudIconT, new Rect(0.0f, 0.0f, hudIconT.width, hudIconT.height), new Vector2(0.5f, 0.3f), 20.0f);
+
+
+            // Create an effect for swap
+            var colorOverlay = new GenericSpriteEffect.ColorOverlay()
+            {
+                _enabled = true,
+                _curve = new Curve(AnimationCurve.Linear(0.5f, 1, 0, 0)),
+                _startColor = Color.red,
+                _endColor = new Color(1, 0, 0, 0),
+            };
+            var colorBlend = new GenericSpriteEffect.ColorBlend() { _enabled = false };
+            var outline = new GenericSpriteEffect.Outline()
+            {
+                _enabled = true,
+                _colorChange = true,
+                _color = Color.red,
+                _endColor = new Color(1, 0, 0, 0f),
+                _duration = 8f,
+                _width = 3,
+            };
+            var grayScale = new GenericSpriteEffect.GrayScale() { _enabled = false };
+
+            swapSpriteEffect = new(0, 8f, 1f, colorOverlay, colorBlend, outline, grayScale);
         }
         
         // Thanks to MrBacanudo for this method of loading Sprites!
@@ -115,7 +142,7 @@ namespace PlayableDracula
                 ValueGauge gauge = (ValueGauge)weapon.gauge;
 
                 bool multiplyHealing = false;
-                if (gauge.currentValue >= gauge.maxValue)
+                if (gauge.currentValue >= gauge.maxValue && attacker.health.currentHealth < attacker.health.maximumHealth)
                 {
                     multiplyHealing = true;
                     gauge.Clear();
@@ -189,6 +216,28 @@ namespace PlayableDracula
 
         #endregion
 
+        #region SetSwapAbility
+
+        [HarmonyPostfix]
+        [HarmonyPatch(typeof(WeaponInventory), nameof(WeaponInventory.NextWeapon))]
+        private static void PrefixNextWeapon(WeaponInventory __instance, bool __result)
+        {
+            if (__result is false)
+                return;
+
+            if (IsDracula(__instance.current))
+            {
+                swapSpriteEffect.Reset();
+                Singleton<Service>.Instance.levelManager.player.spriteEffectStack.Add(swapSpriteEffect);
+            }
+            else
+            {
+                Singleton<Service>.Instance.levelManager.player.spriteEffectStack.Remove(swapSpriteEffect);
+            }
+        }
+
+        #endregion
+
         #region SetObtainability
 
         private static bool setObtainable = false;
@@ -242,7 +291,6 @@ namespace PlayableDracula
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(Gear), nameof(Gear.displayName), MethodType.Getter)]
-        [HarmonyPatch(typeof(Weapon), nameof(Weapon.activeName), MethodType.Getter)]
         private static bool PrefixSkullName(Gear __instance, ref string __result)
         {
             if (IsDracula(__instance))
@@ -272,12 +320,25 @@ namespace PlayableDracula
         }
 
         [HarmonyPrefix]
+        [HarmonyPatch(typeof(Weapon), nameof(Weapon.activeName), MethodType.Getter)]
+        private static bool PrefixActiveName(Gear __instance, ref string __result)
+        {
+            if (IsDracula(__instance))
+            {
+                __result = "Bloodlust";
+                return false;
+            }
+
+            return true;
+        }
+
+        [HarmonyPrefix]
         [HarmonyPatch(typeof(Weapon), nameof(Weapon.activeDescription), MethodType.Getter)]
         private static bool PrefixActiveDescription(Weapon __instance, ref string __result)
         {
             if (IsDracula(__instance))
             {
-                __result = "Does nothing on swap :)";
+                __result = "Does nothing on swap for now";
                 return false;
             }
 
