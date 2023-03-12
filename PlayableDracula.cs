@@ -12,7 +12,6 @@ using Singletons;
 using System;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.Rendering;
 using static Characters.CharacterStatus;
 
 namespace PlayableDracula
@@ -86,7 +85,7 @@ namespace PlayableDracula
 
             Texture2D thumbnailT = LoadTextureB64(thumbnailB64);
             thumbnail = Sprite.Create(thumbnailT, new Rect(0.0f, 0.0f, 47, 39), new Vector2(0.5f, 0.5f), 19.0f);
-            
+
 
 
             // Create an effect for swap
@@ -111,7 +110,7 @@ namespace PlayableDracula
 
             swapSpriteEffect = new(0, Plugin.DummySwapVFXDuration.Value, 1f, colorOverlay, colorBlend, outline, grayScale);
         }
-        
+
         // Thanks to MrBacanudo for this method of loading Sprites!
         private static Texture2D LoadTextureB64(string b64String)
         {
