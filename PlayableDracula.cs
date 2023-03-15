@@ -32,11 +32,11 @@ namespace PlayableDracula
         {
             // Load droppedSkull sprite
             string skullB64 =
-                "iVBORw0KGgoAAAANSUhEUgAAABsAAAAWCAMAAAAGlBe5AAAAAXNSR0IArs4c6QAAAH5QTFRFAAAAprHSxc/o6/T3ipOvuAAg2OLvyNLkbnaNOQAhnnx/gG" +
-                "JkpgAafQQR9PDxaQA8oH+CvZeawwASXgANsQYXBAQEfQQSzC09S1Jl/wk0OgAPBgcI/9po13kNLxkx5+3wHgwG//jhNhIE2MPF////0NviNAYSEwsUPEVK" +
-                "oLbFgkZQuwAAACp0Uk5TAP//////////////////////////////////////////////////////J0/sFAAAALBJREFUKJGF0QEOgyAMQFFB0FK0rktI3P" +
-                "0vupYRrbhlP8aoDwnoMPzPtb6Sl+NTN0CfOz/WOgyGOgzBjScJXixYUjswAgQ/ztIU1ex6YckZ5hkRo5vUIKXULC2IGZAI4wIypdK6qjCnDR+k4bYlMSG9" +
-                "q5j0nWfFpMZEzG3ODKVakVC2d4oupghSeTVj3m8mcbXdGh2hfGxLnV3IGGexyy8CqJuhLCfvh6uZ694M3uhHby7BCpaHxESsAAAAAElFTkSuQmCC";
+                "iVBORw0KGgoAAAANSUhEUgAAABsAAAAWCAMAAAAGlBe5AAAAAXNSR0IArs4c6QAAAH5QTFRFAAAAprHSxc/o6/T3ipOvuAAg2OLvyNLkbnaNOQAhnnx/gGJk" +
+                "pgAafQQR9PDxaQA8oH+CvZeawwASXgANsQYXBAQEfQQSzC09S1Jl/wk0OgAPBgcI/9po13kNLxkx5+3wHgwG//jhNhIE2MPF////0NviNAYSEwsUPEVKoLbF" +
+                "gkZQuwAAACp0Uk5TAP//////////////////////////////////////////////////////J0/sFAAAAK5JREFUKJGF0QEOgyAMQFFBmG1RXJeYeP+Tru2M" +
+                "FuayH2PUhwR0GP4Xjm4pyvGpG6DPQxytDpOjDlMK40WCjSVPaidmgBTHSXpkNb9emEuBaSKiHB5qgIiH4UxUgGqlPINMqbQsKsy40rNqtK4oJqR3hqjvvAxR" +
+                "jWtlPuYssJltEsn2LtHFbIJGZsz7nbHZ7q2ekXxsT5015IyLWPOLAGwztcgpxqE1d92bwy/60RsrAQqS1BdDZgAAAABJRU5ErkJggg==";
 
             Texture2D skullT = LoadTextureB64(skullB64);
             droppedSkull = Sprite.Create(skullT, new Rect(0.0f, 0.0f, 27, 22), new Vector2(0.5f, 0.5f), 35.0f);
