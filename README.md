@@ -6,6 +6,10 @@ Special thanks to [MrBacanudo](https://github.com/MrBacanudo)
 `$(SkulFolder)` is a directory where the game is located on your PC
 
 ## Setup
+### Automatic setup
+Visit [Thunderstore page of this mod](https://thunderstore.io/c/skul-the-hero-slayer/p/Limtis/PlayableDracula/) and install it with the Mod Manager!
+
+### Manual setup
 1. Extract into `$(SkulFolder)/2020.3.34` (You will need to create a folder)
     - [unstripped Unity 2020.3.34 files](https://unity.bepinex.dev/libraries/2020.3.34.zip)
     - [unstripped CoreLibs 2020.3.34 files](https://unity.bepinex.dev/corlibs/2020.3.34.zip)
